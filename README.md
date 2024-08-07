@@ -16,5 +16,6 @@ This README documents the steps necessary to get the Ruby on Rails (ROR) applica
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
+git clone https://github.com/rahulpal80524/teacher_portal.git
+
 ```
