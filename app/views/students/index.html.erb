@@ -1,0 +1,139 @@
+<%= csrf_meta_tags %>
+<%= csp_meta_tag %>
+<%= stylesheet_link_tag 'application', media: 'all' %>
+<%= javascript_include_tag 'application' %>
+
+<script type="module">
+  document.addEventListener("turbo:load", function() {
+    const logoutButton = document.querySelector(".logout-button.nav-link");
+    if (logoutButton) {
+      logoutButton.addEventListener("click", function(event) {
+        event.preventDefault();
+        fetch("<%= destroy_teacher_session_path %>", {
+          method: "DELETE",
+          headers: {
+            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+          }
+        }).then(response => {
+          if (response.ok) {
+            window.location.href = "<%= new_teacher_session_path %>";
+          }
+        });
+      });
+    }
+  });
+</script>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <a class="navbar-brand-tailwebs" href="#">tailwebs.</a>
+  <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+    <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
+      <li class="nav-item active">
+        <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+      </li>
+      <% if teacher_signed_in? %>
+        <li class="nav-item active">
+          <%= link_to 'Logout', destroy_teacher_session_path, method: :delete, class: 'logout-button nav-link' %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="card">
+    <div class="card-body">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Subject Name</th>
+            <th scope="col">Marks</th>
+            <th class="last-column" scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="student-list">
+          <% @students.each do |student| %>
+            <tr data-id="<%= student.id %>">
+              <td onblur="updateStudent(<%= student.id %>, 'name', this.innerText)">
+                <i class="fa-solid fa-circle"></i> <%= student.name %>
+              </td>
+              <td onblur="updateStudent(<%= student.id %>, 'subject_name', this.innerText)">
+                <%= student.subject_name %>
+              </td>
+              <td onblur="updateStudent(<%= student.id %>, 'marks', this.innerText)" class="student-marks">
+                <%= student.marks %>
+              </td>
+              <td>
+                <div class="dropdown show">
+                  <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span class="fas fa-angle-down"></span>
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                    <button onclick="deleteStudent(<%= student.id %>)" class="dropdown-item" href="#">Delete</button>
+                    <button onclick="showEditStudentModal(<%= student.id %>)" class="dropdown-item" href="#">Edit</button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="add-popup-btn-div">
+  <button class="add-popup-btn" onclick="showAddStudentModal()">Add New Student</button>
+</div>
+
+<!-- Modal and backdrop elements -->
+<div id="add-student-modal" style="display:none;">
+  <div class="card-body">
+    <form id="add-student-form" class="form-horizontal">
+      <div class="form-group">
+        <label for="name" class="control-label">Name:</label>
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">
+              <img src="<%= asset_path('user.png') %>" alt="User" class="small-icon">
+            </span>
+          </div>
+          <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="subject_name" class="control-label">Subject Name:</label>
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">
+              <img src="<%= asset_path('book.png') %>" alt="Subject" class="small-icon">
+            </span>
+          </div>
+          <input type="text" id="subject_name" name="subject_name" class="form-control" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="marks" class="control-label">Marks:</label>
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">
+              <img src="<%= asset_path('mark.png') %>" alt="Marks" class="small-icon">
+            </span>
+          </div>
+          <input type="number" id="marks" name="marks" class="form-control" required>
+        </div>
+      </div>
+      <input type="hidden" id="student-id" name="student-id">
+      <div class="form-group">
+        <div class="col-md-12 text-center">
+          <button type="submit" class="btn btn-primary" onclick="closeAddStudentModal()">Add Student</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<div id="modal-backdrop"></div>
