@@ -10,15 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_06_061417) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_15_063226) do
   create_table "students", force: :cascade do |t|
     t.string "name"
-    t.string "subject_name"
-    t.integer "marks"
     t.integer "teacher_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["teacher_id"], name: "index_students_on_teacher_id"
+  end
+
+  create_table "subject_details", force: :cascade do |t|
+    t.integer "student_id", null: false
+    t.string "subject_name"
+    t.integer "marks"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["student_id"], name: "index_subject_details_on_student_id"
   end
 
   create_table "teachers", force: :cascade do |t|
@@ -34,4 +41,5 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_06_061417) do
   end
 
   add_foreign_key "students", "teachers"
+  add_foreign_key "subject_details", "students"
 end

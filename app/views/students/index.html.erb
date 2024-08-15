@@ -1,98 +1,212 @@
-<%= csrf_meta_tags %>
-<%= csp_meta_tag %>
-<%= stylesheet_link_tag 'application', media: 'all' %>
-<%= javascript_include_tag 'application' %>
-
-<script type="module">
-  document.addEventListener("turbo:load", function() {
-    const logoutButton = document.querySelector(".logout-button.nav-link");
-    if (logoutButton) {
-      logoutButton.addEventListener("click", function(event) {
-        event.preventDefault();
-        fetch("<%= destroy_teacher_session_path %>", {
-          method: "DELETE",
-          headers: {
-            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
-          }
-        }).then(response => {
-          if (response.ok) {
-            window.location.href = "<%= new_teacher_session_path %>";
-          }
-        });
-      });
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teacher Portal</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  <%= stylesheet_link_tag 'application', media: 'all' %>
+  <%= javascript_include_tag 'application' %>
+  
+  <%= stylesheet_link_tag 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' %>
+  <%= javascript_include_tag 'https://code.jquery.com/jquery-3.3.1.slim.min.js' %>
+  <%= javascript_include_tag 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js' %>
+  <%= javascript_include_tag 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js' %>
+  
+  <style>
+    body {
+      background-color: #f1f1f1;
     }
-  });
-</script>
-
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-  <a class="navbar-brand-tailwebs" href="#">tailwebs.</a>
-  <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
-    <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
-      <li class="nav-item active">
-        <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
-      </li>
-      <% if teacher_signed_in? %>
+    .container {
+      margin-top: 50px;
+    }
+    .card {
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+      background-color: white;
+      border-bottom: none;
+    }
+    .card-body {
+      padding: 30px;
+    }
+    .form-control {
+      border-radius: 5px;
+      height: 50px;
+    }
+    .btn-primary {
+      background-color: #000000;
+      border: none;
+      width: 100%;
+      padding: 15px;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    .input-group-text {
+      background-color: white;
+      border-left: none;
+    }
+    .input-group {
+      border: 1px solid #ced4da;
+      border-radius: 5px;
+    }
+    .input-group .form-control {
+      border-right: none;
+    }
+    .input-group .form-control:focus {
+      box-shadow: none;
+    }
+    .text-center img {
+      margin-top: 20px;
+    }
+    .text-center h2 {
+      color: #d9534f;
+    }
+    .btn-close {
+      background-color: #f44336;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    .navbar-brand-tailwebs {
+      color: red;
+      font-size: xx-large;
+    }
+    .dropdown-menu.show {
+      display: block;
+      margin-left: -55px;
+    }
+    .show>.btn-secondary.dropdown-toggle, .btn-secondary {
+      border-radius: 20px;
+      background-color: black;
+      border-color: black;
+    }
+    table, td {
+      border: none !important;
+    }
+    table td:last-child, .last-column {
+      text-align: center;
+    }
+    .add-popup-btn {
+      background-color: black;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 0px;
+    }
+    .add-popup-btn-div {
+      margin: 30px 0px 0px 55px;
+    }
+    @media (min-width: 1200px) {
+      .container {
+        max-width: 1400px;
+      }
+    }
+    #add-student-modal {
+      display: none;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      z-index: 1000;
+    }
+    #add-student-modal h2 {
+      margin-bottom: 20px;
+    }
+    #add-student-modal .form-group {
+      margin-bottom: 15px;
+    }
+    #add-student-modal .btn-close {
+      background-color: #f44336;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <a class="navbar-brand-tailwebs" href="#">tailwebs.</a>
+    <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+      <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
         <li class="nav-item active">
-          <%= link_to 'Logout', destroy_teacher_session_path, method: :delete, class: 'logout-button nav-link' %>
+          <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
         </li>
-      <% end %>
-    </ul>
-  </div>
-</nav>
+        <% if teacher_signed_in? %>
+          <li class="nav-item active">
+            <%= link_to 'Logout', destroy_teacher_session_path, method: :delete, class: 'logout-button nav-link' %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </nav>
 
-<div class="container">
-  <div class="card">
-    <div class="card-body">
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Subject Name</th>
-            <th scope="col">Marks</th>
-            <th class="last-column" scope="col">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="student-list">
-          <% @students.each do |student| %>
-            <tr data-id="<%= student.id %>">
-              <td onblur="updateStudent(<%= student.id %>, 'name', this.innerText)">
-                <i class="fa-solid fa-circle"></i> <%= student.name %>
-              </td>
-              <td onblur="updateStudent(<%= student.id %>, 'subject_name', this.innerText)">
-                <%= student.subject_name %>
-              </td>
-              <td onblur="updateStudent(<%= student.id %>, 'marks', this.innerText)" class="student-marks">
-                <%= student.marks %>
-              </td>
-              <td>
-                <div class="dropdown show">
-                  <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <span class="fas fa-angle-down"></span>
-                  </a>
-                  <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                    <button onclick="deleteStudent(<%= student.id %>)" class="dropdown-item" href="#">Delete</button>
-                    <button onclick="showEditStudentModal(<%= student.id %>)" class="dropdown-item" href="#">Edit</button>
-                  </div>
-                </div>
-              </td>
+  <div class="container">
+    <div class="card">
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Subject Name</th>
+              <th scope="col">Marks</th>
+              <th class="last-column" scope="col">Actions</th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody id="student-list">
+            <% @students.each do |student| %>
+              <tr data-id="<%= student[:id] %>" style="<%= current_teacher.id != student[:teacher_id] ? 'background-color: white;' : 'background-color: white;' %>"
+>
+                <td onblur="updateStudent(<%= student[:id] %>, 'name', this.innerText)"><i class="fa-solid fa-circle"></i> <%= student[:name] %></td>
+                <td onblur="updateStudent(<%= student[:id] %>, 'subject_name', this.innerText)"><%= student[:subject_name] %></td>
+                <td onblur="updateStudent(<%= student[:id] %>, 'marks', this.innerText)" class="student-marks"><%= student[:marks] %></td>
+                <td style="<%= current_teacher.id != student[:teacher_id] ? 'display: none;' : 'display: block;' %>">
+                  <div class="dropdown show">
+                    <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <span class="fas fa-angle-down"></span>
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                      <button onclick="deleteStudent(<%= student[:id] %>)" class="dropdown-item" href="#">Delete</button>
+                      <button onclick="showEditStudentModal(<%= student[:id] %>)" class="dropdown-item" href="#">Edit</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="add-popup-btn-div">
-  <button class="add-popup-btn" onclick="showAddStudentModal()">Add New Student</button>
-</div>
+  <div class="add-popup-btn-div">
+    <button class="add-popup-btn" onclick="showAddStudentModal()">Add New Student</button>
+    <button class="add-popup-btn" onclick="sortStudent()">Sort Student</button>
+  </div>
 
-<!-- Modal and backdrop elements -->
 <div id="add-student-modal" style="display:none;">
+<button type="button" class="btn btn-secondary" onclick="closeAddStudentModal()">Close</button>
   <div class="card-body">
+    <h2 class="text-center mb-4">Add New Student</h2>
     <form id="add-student-form" class="form-horizontal">
       <div class="form-group">
         <label for="name" class="control-label">Name:</label>
@@ -128,12 +242,129 @@
         </div>
       </div>
       <input type="hidden" id="student-id" name="student-id">
-      <div class="form-group">
-        <div class="col-md-12 text-center">
-          <button type="submit" class="btn btn-primary" onclick="closeAddStudentModal()">Add Student</button>
-        </div>
+      <div class="form-group text-center">
+        <button type="submit" class="btn btn-primary">Add Student</button>
       </div>
     </form>
   </div>
 </div>
-<div id="modal-backdrop"></div>
+<div id="modal-backdrop" style="display:none;"></div>
+
+  <script type="module">
+    document.addEventListener("turbo:load", function() {
+      const logoutButton = document.querySelector(".logout-button.nav-link");
+      if (logoutButton) {
+        logoutButton.addEventListener("click", function(event) {
+          event.preventDefault();
+          fetch("<%= destroy_teacher_session_path %>", {
+            method: "DELETE",
+            headers: {
+              "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+            }
+          }).then(response => {
+            if (response.ok) {
+              window.location.href = "/";
+            } else {
+              alert("Failed to log out.");
+            }
+          });
+        });
+      }
+    });
+  </script>
+
+  <script>
+
+    window.sortStudent = function() {
+      const studentList = document.getElementById('student-list');
+      const students = Array.from(studentList.querySelectorAll('tr'));
+      students.sort((a, b) => { 
+        const marksA = 
+        parseFloat(a.children[2].innerText);
+
+        const marksB = 
+        parseFloat(b.children[2].innerText);
+   
+        return marksB - marksA
+        });
+       
+       students.forEach(student => studentList.appendChild(student));
+    }
+
+    window.showAddStudentModal = function(student = {}) {
+      const modal = document.getElementById('add-student-modal');
+      modal.style.display = 'block';
+      
+      // Pre-fill form fields if student data is provided
+      document.getElementById('name').value = student.name || '';
+      document.getElementById('subject_name').value = student.subject_name || '';
+      document.getElementById('marks').value = student.marks || '';
+      document.getElementById('student-id').value = student.id || '';  // Set student ID if editing
+    }
+
+    window.closeAddStudentModal = function() {
+      document.getElementById('add-student-modal').style.display = 'none';
+    }
+
+    window.showEditStudentModal = function(studentId) {
+      const studentRow = document.querySelector(`tr[data-id='${studentId}']`);
+      const student = {
+        id: studentId,
+        name: studentRow.children[0].innerText.trim(),
+        subject_name: studentRow.children[1].innerText.trim(),
+        marks: studentRow.children[2].innerText.trim()
+      };
+      showAddStudentModal(student);
+    }
+
+    window.deleteStudent = function(studentId) {
+      fetch(`/students/${studentId}`, {
+        method: "DELETE",
+        headers: {
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+        }
+      }).then(response => {
+        if (response.ok) {
+          document.querySelector(`tr[data-id='${studentId}']`).remove();
+        } else {
+          alert("Failed to delete student.");
+        }
+      });
+    }
+
+    document.getElementById('add-student-form').addEventListener('submit', function(event) {
+  event.preventDefault();
+
+  const studentId = document.getElementById('student-id').value;
+  const formData = new FormData(event.target);
+
+  fetch(studentId ? `/students/${studentId}` : '/students', {
+    method: studentId ? "PATCH" : "POST",
+    headers: {
+      "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+    },
+    body: formData
+  })
+  .then(response => response.json().then(data => ({ status: response.ok, body: data })))
+  .then(({ status, body }) => {
+    if (status) {
+      // Success message
+      debugger;
+      alert(body.success);
+      location.reload(); // Reload the page after success
+    } else {
+      // Error message
+      debugger;
+      alert(body.error);
+    }
+  })
+  .catch(error => {
+    debugger;
+    console.error('Error:', error);
+    alert("An unexpected error occurred.");
+  });
+});
+
+  </script>
+</body>
+</html>
